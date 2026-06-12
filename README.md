@@ -16,6 +16,8 @@ http://服务器IP:8001
 
 首次自动上传时需要在弹出的浏览器登录 ERP。登录态会保存在服务器本地的 `config/erp_storage.json`，不要提交到仓库。
 
+Render 等云服务器没有桌面环境，启动脚本会在运行时把 `config/erp_rpa.local.json` 里的 `headful` 调整为 `false`，让 Playwright 使用无界面浏览器。`app` 目录保持原始 Mac 版自动化语法不变。
+
 ## 本地运行
 
 ```bash
