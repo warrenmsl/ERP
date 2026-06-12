@@ -1,0 +1,247 @@
+{% extends "erp_base.html" %}
+{% block sidebar_extra %}
+{% if erp_preview %}
+{% set sidebar_erp_input = erp_preview.input %}
+<section class="erp-auto-upload-panel erp-auto-upload-panel--sidebar">
+  <div class="erp-auto-upload-intro">
+    <strong>自动上传聚水潭</strong>
+    <p class="muted">预览通过后可直接上传，会导出全部 {{ erp_preview.built.rows|length }} 条规格并打开聚水潭上传。</p>
+  </div>
+  <p class="muted erp-auto-upload-notify">上传成功后可发钉钉提醒。不需要时设置 <code>NOTIFY_ERP_AUTO=0</code>。</p>
+  <div class="erp-auto-upload-actions">
+    <form method="post" action="/modules/erp/auto-upload" enctype="multipart/form-data" class="erp-auto-upload-form">
+      <textarea name="raw_text" hidden>{{ sidebar_erp_input.get("raw_text", "") }}</textarea>
+      <input type="hidden" name="width_span" value="{{ sidebar_erp_input.get('width_span', '') }}">
+      <input type="hidden" name="source_file_name" value="{{ sidebar_erp_input.get('source_file_name', '') }}">
+      <input type="hidden" name="source_type" value="{{ sidebar_erp_input.get('source_type', 'table_text') }}">
+      <input type="hidden" name="default_product_name" value="{{ sidebar_erp_input.get('default_product_name', '') }}">
+      <input type="hidden" name="only" value="distribution">
+      <input type="hidden" name="send_notify" value="1">
+      <button type="submit" class="primary-action">仅自动上传聚水潭（分销上架）</button>
+    </form>
+    <form method="post" action="/modules/erp/auto-upload" enctype="multipart/form-data" class="erp-auto-upload-form">
+      <textarea name="raw_text" hidden>{{ sidebar_erp_input.get("raw_text", "") }}</textarea>
+      <input type="hidden" name="width_span" value="{{ sidebar_erp_input.get('width_span', '') }}">
+      <input type="hidden" name="source_file_name" value="{{ sidebar_erp_input.get('source_file_name', '') }}">
+      <input type="hidden" name="source_type" value="{{ sidebar_erp_input.get('source_type', 'table_text') }}">
+      <input type="hidden" name="default_product_name" value="{{ sidebar_erp_input.get('default_product_name', '') }}">
+      <input type="hidden" name="only" value="new_product">
+      <input type="hidden" name="send_notify" value="1">
+      <button type="submit" class="subtle-button">仅自动上传聚水潭（新品录入）</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block content %}
+{% set erp_input = erp_preview.input if erp_preview else (erp_input if erp_input is defined else {}) %}
+<section class="panel erp-lab">
+  <div class="panel-head">
+    <div>
+      <span class="eyebrow">ERP Import</span>
+      <h2>资料解析与映射</h2>
+    </div>
+    <span class="muted">支持 Excel 直传、截图 OCR、表格粘贴；先预览映射结果，再自动上传聚水潭</span>
+  </div>
+  <form method="post" action="/modules/erp/preview" enctype="multipart/form-data" class="inline-form erp-import-form erp-lab-form">
+    <div class="calculator-grid">
+      <label>默认产品名称
+        <input name="default_product_name" placeholder="如：居里沙发垫" value="{{ erp_input.get('default_product_name', '') }}">
+      </label>
+      <label>门幅（写入商品名称）
+        <input name="width_span" placeholder="如：2.1米" value="{{ erp_input.get('width_span', '') }}">
+      </label>
+    </div>
+    <label>上传 Excel 或截图
+      <input type="file" name="upload_file" accept=".xlsx,.xlsm,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.heic">
+    </label>
+    <label>或粘贴表格 / OCR 文本
+      <textarea name="raw_text" rows="7" placeholder="产品名称	颜色	尺寸	价格	重量	供应商
+居里沙发垫	黑白	70*70cm	13	0.22	赫本">{{ erp_input.get("raw_text", "") }}</textarea>
+    </label>
+    <label>来源备注（可选）
+      <input name="source_file_name" placeholder="分销上架模版.xlsx / 微信截图" value="{{ erp_input.get('source_file_name', '') }}">
+    </label>
+    <p class="muted erp-map-hint">商品编码=产品名缩写+颜色缩写+尺寸（*改-，去掉 cm）；分销上架基本售价=源价×1.05向上取整；新品录入成本价=源价。</p>
+    <button type="submit" class="primary-action">解析并预览 ERP 映射</button>
+  </form>
+
+  {% if erp_input.get("upload_notice") %}
+  <div class="error-card batch-error" style="background:#fff7ed;border-color:#fdba74;">
+    <strong>文件解析提示</strong>
+    <span>{{ erp_input.upload_notice }}</span>
+  </div>
+  {% endif %}
+  {% if erp_upload_result and erp_upload_result.upload_message %}
+  <div class="error-card batch-error" style="{% if erp_upload_result.upload_status == 'uploaded' %}background:#ecfdf5;border-color:#86efac;{% else %}background:#fff7ed;border-color:#fdba74;{% endif %}">
+    <strong>{% if erp_upload_result.upload_status == 'uploaded' %}ERP 录入成功{% elif erp_upload_result.upload_status == 'ready' %}已导出待上传{% else %}ERP 上传未完成{% endif %}</strong>
+    <span>{{ erp_upload_result.upload_message }}</span>
+    {% if erp_upload_result.batch_id %}
+    <div class="muted" style="margin-top:0.5rem;">
+      <a href="/modules/erp/download/{{ erp_upload_result.batch_id }}/distribution">下载分销上架 xlsx</a>
+      ·
+      <a href="/modules/erp/download/{{ erp_upload_result.batch_id }}/new-product">下载新品录入 xlsx</a>
+      {% if erp_upload_result.upload_status == 'failed' %}
+      ·
+      <form method="post" action="/modules/erp/retry-upload/{{ erp_upload_result.batch_id }}" style="display:inline;">
+        <button type="submit" class="subtle-button">重试自动上传</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if erp_error %}
+  <div class="error-card batch-error">
+    <strong>ERP 解析失败</strong>
+    <span>{{ erp_error }}</span>
+  </div>
+  {% elif erp_preview %}
+  {% if erp_pinyin_warning %}
+  <div class="error-card batch-error" style="background:#fff7ed;border-color:#fdba74;">
+    <strong>款式编码异常</strong>
+    <span>{{ erp_pinyin_warning }}</span>
+  </div>
+  {% endif %}
+  {% if erp_warning %}
+  <div class="error-card batch-error" style="background:#fff7ed;border-color:#fdba74;">
+    <strong>价格/重量未识别</strong>
+    <span>{{ erp_warning }}</span>
+  </div>
+  {% endif %}
+  <div class="batch-result-head">
+    <strong>已解析 {{ erp_preview.built.rows|length }} 条规格</strong>
+    <span class="muted">款式编码 <code class="mono">{{ erp_preview.built.product_full_code }}</code>
+    {% if erp_preview.built.batch_missing %} · 批次待补：{{ erp_preview.built.batch_missing|join('、') }}{% endif %}</span>
+  </div>
+
+  <section class="erp-preview-block">
+    <div class="erp-preview-head">
+      <div>
+        <span class="eyebrow">Template A</span>
+        <h3>分销上架模版预览</h3>
+        <span class="muted">基本售价 = 源表成本价 × 1.05，向上取整</span>
+      </div>
+      <form method="post" action="/modules/erp/export-distribution" class="erp-export-form">
+        <textarea name="raw_text" hidden>{{ erp_input.get("raw_text", "") }}</textarea>
+        <input type="hidden" name="default_product_name" value="{{ erp_input.get('default_product_name', '') }}">
+        <input type="hidden" name="width_span" value="{{ erp_input.get('width_span', '') }}">
+        <input type="hidden" name="source_file_name" value="{{ erp_input.get('source_file_name', '') }}">
+        <input type="hidden" name="source_type" value="{{ erp_input.get('source_type', 'table_text') }}">
+        <button type="submit" class="subtle-button">导出分销上架 xlsx</button>
+      </form>
+    </div>
+    <details class="erp-table-details">
+      <summary class="erp-table-summary">
+        <span class="erp-table-summary-closed">展开查看全部 {{ erp_preview.built.rows|length }} 条明细</span>
+        <span class="erp-table-summary-open">收起明细</span>
+      </summary>
+      <div class="table-wrap batch-table erp-table-body">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>款式编码</th>
+              <th>商品编码</th>
+              <th>颜色</th>
+              <th>规格</th>
+              <th>商品名称</th>
+              <th>重量(kg)</th>
+              <th>基本售价</th>
+              <th>供应商名</th>
+              <th>待补项</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in erp_preview.built.rows %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="mono">{{ row.style_code or "-" }}</td>
+              <td class="mono">{{ row.sku_code or "-" }}</td>
+              <td>{{ row.erp_color or "-" }}</td>
+              <td>{{ row.erp_spec or "-" }}</td>
+              <td>{{ row.erp_goods_name or "-" }}</td>
+              <td>{% if row.weight_present %}{{ "%.2f"|format(row.weight) }}{% else %}-{% endif %}</td>
+              <td>{% if row.price_present %}{{ row.base_selling_price }}{% else %}-{% endif %}</td>
+              <td>{{ row.supplier or "" }}</td>
+              <td class="erp-missing">{% if row.missing_fields %}{{ row.missing_fields|join('、') }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="erp-table-collapse-footer">
+        <button type="button" class="subtle-button erp-table-collapse-btn">收起明细</button>
+      </div>
+    </details>
+  </section>
+
+  <section class="erp-preview-block">
+    <div class="erp-preview-head">
+      <div>
+        <span class="eyebrow">Template B</span>
+        <h3>新品录入预览</h3>
+        <span class="muted">由分销上架映射生成 · 成本价保留源表原价</span>
+      </div>
+      <form method="post" action="/modules/erp/export-new-product" class="erp-export-form">
+        <textarea name="raw_text" hidden>{{ erp_input.get("raw_text", "") }}</textarea>
+        <input type="hidden" name="default_product_name" value="{{ erp_input.get('default_product_name', '') }}">
+        <input type="hidden" name="width_span" value="{{ erp_input.get('width_span', '') }}">
+        <input type="hidden" name="source_file_name" value="{{ erp_input.get('source_file_name', '') }}">
+        <input type="hidden" name="source_type" value="{{ erp_input.get('source_type', 'table_text') }}">
+        <button type="submit" class="subtle-button">导出新品录入 xlsx</button>
+      </form>
+    </div>
+    <details class="erp-table-details">
+      <summary class="erp-table-summary">
+        <span class="erp-table-summary-closed">展开查看全部 {{ erp_preview.built.rows|length }} 条明细</span>
+        <span class="erp-table-summary-open">收起明细</span>
+      </summary>
+      <div class="table-wrap batch-table new-product-table erp-table-body">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>商品编码</th>
+              <th>重量</th>
+              <th>基本售价</th>
+              <th>成本价</th>
+              <th>其它属性1</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in erp_preview.built.rows %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="mono">{{ row.sku_code or "-" }}</td>
+              <td>{% if row.weight_present %}{{ "%.2f"|format(row.weight) }}{% else %}-{% endif %}</td>
+              <td>{% if row.price_present %}{{ row.base_selling_price }}{% else %}-{% endif %}</td>
+              <td>{% if row.price_present %}{{ "%.1f"|format(row.cost_price) }}{% else %}-{% endif %}</td>
+              <td>{{ row.supplier or "" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="erp-table-collapse-footer">
+        <button type="button" class="subtle-button erp-table-collapse-btn">收起明细</button>
+      </div>
+    </details>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  document.querySelectorAll(".erp-table-collapse-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const details = button.closest(".erp-table-details");
+      if (!details) return;
+      details.open = false;
+      details.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  });
+})();
+</script>
+{% endblock %}

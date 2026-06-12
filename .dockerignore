@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.git/
+.venv/
+venv/
+env/
+dist/
+runtime/
+.pw-browsers/
+*.zip
+logs/
+data/
+config/erp_storage.json
+config/erp_rpa.local.json

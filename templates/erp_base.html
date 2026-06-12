@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ERP 资料录入{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="app-sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">E</span>
+      <span class="brand-text">
+        <strong>ERP 录入</strong>
+        <small>聚水潭资料工具</small>
+      </span>
+    </a>
+    <div class="sidebar-section">
+      <span class="sidebar-label">功能</span>
+      <a class="sidebar-link active" href="/">
+        <span class="sidebar-dot">01</span>
+        <span>资料解析与上传</span>
+      </a>
+    </div>
+    <div class="sidebar-card">
+      <span class="sidebar-card-badge">独立版</span>
+      <strong>粘贴 / Excel / 截图</strong>
+      <span>预览映射后自动上传聚水潭分销上架或新品录入。</span>
+    </div>
+    {% block sidebar_extra %}{% endblock %}
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <nav class="breadcrumb" aria-label="面包屑">
+        {% block breadcrumb %}
+        <span class="breadcrumb-current">ERP 资料录入</span>
+        {% endblock %}
+      </nav>
+      <div class="topbar-meta">
+        {% block topbar_meta %}{% endblock %}
+      </div>
+    </header>
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

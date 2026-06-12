@@ -1,0 +1,17 @@
+services:
+  erp:
+    build: .
+    container_name: erp-entry-tool
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8001
+      DATABASE_PATH: /app/data/erp.sqlite3
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      NOTIFY_ERP_AUTO: "0"
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./logs:/app/logs

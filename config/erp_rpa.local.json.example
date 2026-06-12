@@ -1,0 +1,17 @@
+{
+  "mode": "jushuitan",
+  "base_url": "https://www.erp321.com/",
+  "login_url": "https://www.erp321.com/",
+  "storage_state": "config/erp_storage.json",
+  "headful": true,
+  "login_wait_ms": 300000,
+  "distribution": {
+    "start_url": "https://www.erp321.com/epaas",
+    "flow_clicks": ["ERP分销版", "商品", "商品管理", "导入 Excel 表格新增"],
+    "wait_url_contains": "scm121.com"
+  },
+  "new_product": {
+    "start_url": "https://www.erp321.com/epaas",
+    "menu_keywords": ["商品及库存管理(普通商品资料)", "商品及库存管理", "普通商品资料"]
+  }
+}
